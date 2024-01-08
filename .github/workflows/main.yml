@@ -9,7 +9,66 @@ on:
 
 # Liste des jobs
 jobs:
+    tests_frontend:
+        runs-on: ubuntu-latest # S'exécute sur la dernière version d'Ubuntu
+        defaults:
+            run:
+                shell: bash
+                working-directory: frontend
+        steps:
+            - name: Checkout code # Récupère le code source
+              uses: actions/checkout@v4 # Utilise l'action GitHub pour le checkout
+
+            - name: Install NodeJS
+              uses: actions/setup-node@v3
+              with:
+                  cache: 'npm'
+                  cache-dependency-path: frontend/package-lock.json
+
+            - name: Install dependencies
+              run: npm ci --prefer-offline
+
+            - name: Vérifie les vulnérabilités
+              run: npm audit --audit-level=moderate
+
+            - name: Vérifie le code
+              run: npm run lint
+
+    tests_backend:
+        runs-on: ubuntu-latest # S'exécute sur la dernière version d'Ubuntu
+        defaults:
+            run:
+                shell: bash
+                working-directory: node-api
+        steps:
+            - name: Checkout code # Récupère le code source
+              uses: actions/checkout@v4 # Utilise l'action GitHub pour le checkout
+
+            - name: Install NodeJS
+              uses: actions/setup-node@v3
+              with:
+                  cache: 'npm'
+                  cache-dependency-path: frontend/package-lock.json
+
+            - name: Install dependencies
+              run: npm ci --prefer-offline
+
+            - name: Exécute les tests
+              run: npm run test:ci
+
+            - name: Vérifie le code
+              run: npm run lint
+
+            - name: Vérifie les vulnérabilités
+              run: npm audit --audit-level=moderate
+
+            - name: Upload du rapport de couverture sur Codecov
+              uses: codecov/codecov-action@v3
+              env:
+                  CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
     build: # Nom du job
+        needs: [tests_frontend, tests_backend]
         runs-on: ubuntu-latest # S'exécute sur la dernière version d'Ubuntu
 
         permissions: # Permissions nécessaires
@@ -26,9 +85,6 @@ jobs:
 
         # Étapes du job
         steps:
-            - name: test
-              run: echo ghcr.io/${{ github.repository }}/frontend
-
             - name: Checkout code # Récupère le code source
               uses: actions/checkout@v4 # Utilise l'action GitHub pour le checkout
 
