@@ -1,70 +1,125 @@
-name: CI
+# Nom du `workflow`
+name: Build et push des images Docker
 
+# Événements déclenchant le `workflow`
 on:
-    push:
-        branches:
-            - main
+    push: # Déclenche le `workflow` lors d'un `push`
+        branches: # Filtrer les branches
+            - main # Exécute sur la branche `main`
 
+# Liste des jobs
 jobs:
-    build-frontend-and-node-api:
-        runs-on: ubuntu-latest
+    build: # Nom du job
+        runs-on: ubuntu-latest # S'exécute sur la dernière version d'Ubuntu
+        permissions: # Permissions nécessaires
+            packages: write # Autorisation d'écrire aux packages
+
+        # Stratégie de matrice pour exécuter des tâches en parallèle
         strategy:
             matrix:
-                include:
-                    - context_name: ./frontend
-                      image_name: ghcr.io/${{ github.actor }}/${{ github.repository }}/frontend:latest
-                    - context_name: ./node-api
-                      image_name: ghcr.io/${{ github.actor }}/${{ github.repository }}/node-api:latest
-        permissions:
-            packages: write
+                include: # Inclure des variables supplémentaires
+                    - path: 'frontend' # Lorsque le chemin est "frontend"
+                      full_image_name: ghcr.io/${{ github.repository }}/frontend # Nom complet de l'image pour "frontend"
+                    - path: 'node-api' # Lorsque le chemin est "node-api"
+                      full_image_name: ghcr.io/${{ github.repository }}/node-api # Nom complet de l'image pour "node-api"
+
+        # Étapes du job
         steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
+            - name: Checkout code # Récupère le code source
+              uses: actions/checkout@v4 # Utilise l'action GitHub pour le checkout
 
-            - name: Set up QEMU
-              uses: docker/setup-qemu-action@v3
+            - name: Mise en place de Buildx # Configure Docker Buildx
+              uses: docker/setup-buildx-action@v3 # Utilise l'action Buildx
 
-            - name: Set up Docker Buildx
-              uses: docker/setup-buildx-action@v3
+            - name: Login sur GitHub Package Registry # Connexion à GitHub Container Registry
+              uses: docker/login-action@v3 # Utilise l'action de login Docker
+              with: # Avec ces paramètres
+                  registry: ghcr.io # URL du registre
+                  username: ${{ github.actor }} # Nom d'utilisateur GitHub
+                  password: ${{ secrets.GITHUB_TOKEN }} # `GITHUB_TOKEN` pour l'authentification
 
-            - name: Docker meta (tags)
-              id: meta
-              uses: docker/metadata-action@v5
+            - name: Récupération des métadonnées # Récupère les métadonnées pour Docker
+              id: metadata # ID pour cette étape
+              uses: docker/metadata-action@v5 # Utilise l'action de métadonnées
               with:
-                  images: ${{ matrix.image_name }}
+                  images: ${{ matrix.full_image_name }} # Utilise le nom complet de l'image depuis la matrice
 
-            - name: Login to GitHub Container Registry
-              uses: docker/login-action@v3
-              with:
-                  registry: ghcr.io
-                  username: ${{ github.actor }}
-                  password: ${{ secrets.GITHUB_TOKEN }}
+            - name: Build et push # Construit et pousse l'image
+              uses: docker/build-push-action@v5 # Utilise l'action de build et push Docker
+              with: # Avec ces paramètres
+                  push: true # Pousse l'image
+                  tags: ${{ matrix.full_image_name }}:latest # Tags pour l'image
+                  context: ./${{ matrix.path }} # Contexte pour la construction Docker
+                  cache-from: type=gha # Utilise le cache GitHub Actions
+                  cache-to: type=gha,mode=max # Enregistre le cache pour les utilisations futures
 
-            - name: Build and push
-              uses: docker/build-push-action@v5
-              with:
-                  context: ${{ matrix.context_name }}
-                  push: true
-                  tags: ${{ matrix.image_name }}
-                  cache-from: type=gha # Cache de github actions
-                  cache-to: type=gha,mode=max
+# name: Build et push des images Docker
 
-        # build:
-        #     runs-on: ubuntu-latest
+# on:
+#     push:
+#         branches:
+#             - main
 
-        #     steps:
-        #         - name: Checkout code
-        #           uses: actions/checkout@v4
+# jobs:
+#     build-frontend-and-node-api:
+#         runs-on: ubuntu-latest
+#         strategy:
+#             matrix:
+#                 include:
+#                     - context_name: ./frontend
+#                       image_name: ghcr.io/${{ github.actor }}/${{ github.repository }}/frontend:latest
+#                     - context_name: ./node-api
+#                       image_name: ghcr.io/${{ github.actor }}/${{ github.repository }}/node-api:latest
+#         permissions:
+#             packages: write
+#         steps:
+#             - name: Checkout code
+#               uses: actions/checkout@v4
 
-        #         - name: Login to Github Container Registery
-        #           run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+#             - name: Set up QEMU
+#               uses: docker/setup-qemu-action@v3
 
-        #         - name: Convert github.actor in lowercase
-        #           run: echo "ACTOR_LOWER=$(echo ${{ github.actor }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+#             - name: Set up Docker Buildx
+#               uses: docker/setup-buildx-action@v3
 
-        #         - name: Build and push Docker image
-        #           run: |
-        #               docker build -t ghcr.io/$ACTOR_LOWER/frontend .
-        #               docker push ghcr.io/$ACTOR_LOWER/frontend
-        #               docker build -t ghcr.io/$ACTOR_LOWER/node-api .
-        #               docker push ghcr.io/$ACTOR_LOWER/node-api
+#             - name: Docker meta (tags)
+#               id: meta
+#               uses: docker/metadata-action@v5
+#               with:
+#                   images: ${{ matrix.image_name }}
+
+#             - name: Login to GitHub Container Registry
+#               uses: docker/login-action@v3
+#               with:
+#                   registry: ghcr.io
+#                   username: ${{ github.actor }}
+#                   password: ${{ secrets.GITHUB_TOKEN }}
+
+#             - name: Build and push
+#               uses: docker/build-push-action@v5
+#               with:
+#                   context: ${{ matrix.context_name }}
+#                   push: true
+#                   tags: ${{ matrix.image_name }}
+#                   cache-from: type=gha # Cache de github actions
+#                   cache-to: type=gha,mode=max
+
+# build:
+#     runs-on: ubuntu-latest
+
+#     steps:
+#         - name: Checkout code
+#           uses: actions/checkout@v4
+
+#         - name: Login to Github Container Registery
+#           run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+#         - name: Convert github.actor in lowercase
+#           run: echo "ACTOR_LOWER=$(echo ${{ github.actor }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
+#         - name: Build and push Docker image
+#           run: |
+#               docker build -t ghcr.io/$ACTOR_LOWER/frontend .
+#               docker push ghcr.io/$ACTOR_LOWER/frontend
+#               docker build -t ghcr.io/$ACTOR_LOWER/node-api .
+#               docker push ghcr.io/$ACTOR_LOWER/node-api
