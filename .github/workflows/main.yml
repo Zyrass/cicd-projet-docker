@@ -11,6 +11,7 @@ on:
 jobs:
     build: # Nom du job
         runs-on: ubuntu-latest # S'exécute sur la dernière version d'Ubuntu
+
         permissions: # Permissions nécessaires
             packages: write # Autorisation d'écrire aux packages
 
@@ -25,6 +26,9 @@ jobs:
 
         # Étapes du job
         steps:
+            - name: test
+              run: echo ghcr.io/${{ github.repository }}/frontend
+
             - name: Checkout code # Récupère le code source
               uses: actions/checkout@v4 # Utilise l'action GitHub pour le checkout
 
