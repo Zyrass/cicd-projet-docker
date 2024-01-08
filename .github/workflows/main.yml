@@ -10,11 +10,11 @@ jobs:
         runs-on: ubuntu-latest
         strategy:
             matrix:
-                includes:
+                include:
                     - context_name: ./frontend
-                      image_name: ghcr.io/${{ github.actor }}/${{ github.repository }}/frontend
+                      image_name: ghcr.io/${{ github.actor }}/${{ github.repository }}/frontend:latest
                     - context_name: ./node-api
-                      image_name: ghcr.io/${{ github.actor }}/${{ github.repository }}/node-api
+                      image_name: ghcr.io/${{ github.actor }}/${{ github.repository }}/node-api:latest
         permissions:
             packages: write
         steps:
@@ -26,6 +26,12 @@ jobs:
 
             - name: Set up Docker Buildx
               uses: docker/setup-buildx-action@v3
+
+            - name: Docker meta (tags)
+              id: meta
+              uses: docker/metadata-action@v5
+              with:
+                  images: ${{ matrix.image_name }}
 
             - name: Login to GitHub Container Registry
               uses: docker/login-action@v3
@@ -39,7 +45,7 @@ jobs:
               with:
                   context: ${{ matrix.context_name }}
                   push: true
-                  tags: ${{ matrix.image_name }}:latest
+                  tags: ${{ matrix.image_name }}
                   cache-from: type=gha # Cache de github actions
                   cache-to: type=gha,mode=max
 
