@@ -19,9 +19,9 @@ jobs:
         strategy:
             matrix:
                 include: # Inclure des variables supplémentaires
-                    - path: ./tree/main/frontend # Lorsque le chemin est "frontend"
+                    - path: ./frontend # Lorsque le chemin est "frontend"
                       full_image_name: ghcr.io/${{ github.repository }}/frontend # Nom complet de l'image pour "frontend"
-                    - path: ./tree/main/node-api # Lorsque le chemin est "node-api"
+                    - path: ./node-api # Lorsque le chemin est "node-api"
                       full_image_name: ghcr.io/${{ github.repository }}/node-api # Nom complet de l'image pour "node-api"
 
         # Étapes du job
