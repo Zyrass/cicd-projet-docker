@@ -19,9 +19,9 @@ jobs:
         strategy:
             matrix:
                 include: # Inclure des variables supplémentaires
-                    - path: ./frontend # Lorsque le chemin est "frontend"
+                    - path: 'frontend' # Lorsque le chemin est "frontend"
                       full_image_name: ghcr.io/${{ github.repository }}/frontend # Nom complet de l'image pour "frontend"
-                    - path: ./node-api # Lorsque le chemin est "node-api"
+                    - path: 'node-api' # Lorsque le chemin est "node-api"
                       full_image_name: ghcr.io/${{ github.repository }}/node-api # Nom complet de l'image pour "node-api"
 
         # Étapes du job
@@ -57,34 +57,17 @@ jobs:
                   cache-from: type=gha # Utilise le cache GitHub Actions
                   cache-to: type=gha,mode=max # Enregistre le cache pour les utilisations futures
 
-# name: Build et push des images Docker
-
-# on:
-#     push:
-#         branches:
-#             - main
-
 # jobs:
 #     build-frontend-and-node-api:
-#         runs-on: ubuntu-latest
 #         strategy:
 #             matrix:
 #                 include:
 #                     - context_name: ./frontend
-#                       image_name: ghcr.io/${{ github.actor }}/${{ github.repository }}/frontend:latest
+#                       image_name: ghcr.io/${{ github.repository }}/frontend:latest
 #                     - context_name: ./node-api
-#                       image_name: ghcr.io/${{ github.actor }}/${{ github.repository }}/node-api:latest
-#         permissions:
-#             packages: write
+#                       image_name: ghcr.io/${{ github.repository }}/node-api:latest
+
 #         steps:
-#             - name: Checkout code
-#               uses: actions/checkout@v4
-
-#             - name: Set up QEMU
-#               uses: docker/setup-qemu-action@v3
-
-#             - name: Set up Docker Buildx
-#               uses: docker/setup-buildx-action@v3
 
 #             - name: Docker meta (tags)
 #               id: meta
